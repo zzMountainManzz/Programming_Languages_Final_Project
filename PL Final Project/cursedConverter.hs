@@ -90,18 +90,23 @@ cDriver :: Decs -> String
 cDriver (DDec (x, y, z)) = "int main() {" ++ statementLister y ++ "}"
 
 statementLister :: [Statements] -> String
-statementLister [(Assign x y (Left z))] = dataConv x ++ " " ++ strCheck x y ++ " " ++ "=" ++ " " ++ aExToC z ++ "; "
+statementLister [Assign x y (Left z)] = dataConv x ++ " " ++ strCheck x y ++ " " ++ "=" ++ " " ++ aExToC z ++ "; "
 statementLister ((Assign x y (Left z)):xs) = dataConv x ++ " " ++ y ++ " " ++ "=" ++ " " ++ aExToC z ++ "; "++ statementLister xs
-statementLister [(ReAssign x (Left z))] = x ++ " " ++ " = " ++ " " ++ aExToC z ++ "; "
+statementLister [ReAssign x (Left z)] = x ++ " " ++ " = " ++ " " ++ aExToC z ++ "; "
 statementLister ((ReAssign x (Left z)):xs) = x ++ " " ++ " = " ++ " " ++ aExToC z ++ "; " ++ statementLister xs
-statementLister [(Declare (x,y))] = dataConv x ++ " " ++ y ++ "; "
+statementLister [Declare (x,y)] = dataConv x ++ " " ++ y ++ "; "
 statementLister ((Declare (x,y)):xs) = dataConv x ++ " " ++ y ++ "; " ++ statementLister xs
-statementLister [(Print x)] = "printf(" ++ aExToC x ++ "); "
+statementLister [Print x] = "printf(" ++ aExToC x ++ "); "
 statementLister ((Print x):xs) = "printf(" ++ aExToC x ++ "); " ++ statementLister xs
-statementLister [(Ret x)] = "return " ++ aExToC x ++ ";"
+statementLister [Ret x] = "return " ++ aExToC x ++ ";"
 statementLister ((Ret x):xs) = "return " ++ aExToC x ++ ";" ++ statementLister xs
-statementLister [(OInst (x,y,z))] = "struct " ++ x ++ " " ++ y ++ " = " ++ x ++ "_" ++ x ++ "(" ++ argsLister z ++ "); " 
+statementLister [OInst (x,y,z)] = "struct " ++ x ++ " " ++ y ++ " = " ++ x ++ "_" ++ x ++ "(" ++ argsLister z ++ "); " 
 statementLister ((OInst (x,y,z)):xs) = "struct " ++ x ++ " " ++ y ++ " = " ++ x ++ "_" ++ x ++ "(" ++ argsLister z ++ "); " ++ statementLister xs
+{- When making [AExpr] we need to store arguments like "&objectReference", *****************this may not work ): 
+   example: student_setAge(&Jacob,student_getAge(Wolfe) - student_getAge(Luke)) would look like 
+   [Var "&Jacob", Sub (FCall (int, student_getAge,_,_) ["Wolfe"]) (FCall (int, student_getAge,_,_) ["Luke"]))-}
+statementLister [FCall2 x y] = callBuilder x y
+statementLister ((FCall2 x y):xs) = callBuilder x y ++ statementLister xs
 
 -- Check if data type of variable needs to be changed from Java formatting to C
 dataConv :: String -> String
