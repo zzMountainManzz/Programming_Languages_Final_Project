@@ -8,7 +8,7 @@ type RetType   = String
 type PType     = String
 type PVar      = String
 type Vars      = String
-type VTpe      = String
+type VType     = String
 type VName     = String
 type OType     = String
 type OName     = String
@@ -87,7 +87,7 @@ data BExpr = TT | FF -- the true and false constants
 
 ------------------------------------------------------------------------------------
 cDriver :: Decs -> String
-cDriver (DDec (x, y, z)) = "int main() {" ++ statementLister y ++ "}"
+cDriver (DDec (x, y, z)) = "int main() {" ++ statementLister y ++ functionLister z ++ "}"
 
 statementLister :: [Statements] -> String
 statementLister [Assign x y (Left z)] = dataConv x ++ " " ++ strCheck x y ++ " " ++ "=" ++ " " ++ aExToC z ++ "; "
@@ -123,14 +123,23 @@ aExListToC :: [AExpr] -> String
 aExListToC [x] = aExToC x
 aExListToC (x:xs) = aExToC x ++ "," ++ aExListToC xs
 
+toParen :: AExpr -> Bool
+toParen (Var x) = False
+toParen (Const x) = False
+toParen _ = True;
+
+putParen :: AExpr -> String
+putParen z = if toParen z then "(" ++ aExToC z ++ ")" else aExToC z
+
 -- For converting individual AExpr's
 aExToC :: AExpr -> String
 aExToC (Var x) = x
 aExToC (Const x) = show x
-aExToC (Add x y) = aExToC x ++ " + " ++ aExToC y 
-aExToC (Sub x y) = aExToC x ++ " - " ++ aExToC y
-aExToC (Div x y) = aExToC x ++ " / " ++ aExToC y
+aExToC (Add x y) = putParen x ++ " + " ++ putParen y
+aExToC (Sub x y) = putParen x ++ " - " ++ putParen y
+aExToC (Div x y) = putParen x ++ " / " ++ putParen y
 aExToC (FCall x y) = callBuilder x y
+
 
 -- Build a function call with list of AExpr as arguments
 callBuilder :: Funcs -> [AExpr] -> String 
@@ -142,3 +151,25 @@ argsLister :: [Arguments] -> String
 argsLister [x] = x
 argsLister (x:xs) = x ++ ", " ++ argsLister xs
 ---------------------------------------------------------------------------------------
+paramLister :: [Params] -> String
+paramLister ((varType, varName):xs) | xs /= []  = varType ++ " " ++ varName ++ "," ++ paramLister xs
+                                    | otherwise = varType ++ " " ++ varName
+
+functionLister :: [Funcs] -> String
+functionLister ((return, name, params, states):xs) = return ++ " " ++ name ++ "(" ++ paramLister params ++ ")" ++ "{" ++ statementLister states ++ "}"
+
+
+
+--type Params = (PType, PVar)
+--type Funcs = (RetType, FName, [Params], [Statements])
+-------------------------------TEST----SLUT--------------------------------------------------
+states = [Assign "int" "X" (Left (Const 1)), 
+           ReAssign "X" (Left (Add (Const 60) (Sub (Const 10) (Var "X"))))]
+functs :: [Funcs]
+functs = [("int", "addOne", [("int","x")],
+          [ReAssign "X" (Left (Add (Var "x") (Const 1)))])]
+
+test1 = DDec ("Student", states, functs)
+
+concreteTest = cDriver test1
+
