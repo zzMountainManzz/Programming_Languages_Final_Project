@@ -104,7 +104,7 @@ statementLister [OInst (x,y,z)] = "struct " ++ x ++ " " ++ y ++ " = " ++ x ++ "_
 statementLister ((OInst (x,y,z)):xs) = "struct " ++ x ++ " " ++ y ++ " = " ++ x ++ "_" ++ x ++ "(" ++ argsLister z ++ "); " ++ statementLister xs
 {- When making [AExpr] we need to store arguments like "&objectReference", *****************this may not work ): 
    example: student_setAge(&Jacob,student_getAge(Wolfe) - student_getAge(Luke)) would look like 
-   [Var "&Jacob", Sub (FCall (int, student_getAge,_,_) ["Wolfe"]) (FCall (int, student_getAge,_,_) ["Luke"]))-}
+   [Var "&Jacob", Sub (FCall (int, student_getAge,_,_) ["Wolfe"]) (FCall (int, student_getAge,_,_) ["Luke"]))]-}
 statementLister [FCall2 x y] = callBuilder x y
 statementLister ((FCall2 x y):xs) = callBuilder x y ++ statementLister xs
 
