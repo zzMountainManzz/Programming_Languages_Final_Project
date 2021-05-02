@@ -171,7 +171,7 @@ funcyListBuilder x (y:ys) = funcyBuilder x y ++ funcyListBuilder x ys
 funcyBuilder :: CName -> Funcs -> String
 funcyBuilder n (w,x,y,z) | n == w && n == x = "struct " ++ n ++ " " ++ n ++ "_" ++ n ++ "(" ++ paramLister y ++ ")" ++ "{" ++
                                     "struct " ++ n ++ " new" ++ n ++ "; " ++ statementLister z ++ " return " ++ " new" ++ n ++ ";"
-                         | otherwise = dataConv w ++ " " ++ n ++ "_" ++ x ++ "(" ++ paramLister y ++ ")" ++ "{" ++ statementLister z ++ "}"
+                         | otherwise = dataConv w ++ " " ++ x ++ "(" ++ paramLister y ++ ")" ++ "{" ++ statementLister z ++ "}"
 
 -------------------------------TEST-----------------------------------------------------
 states = [Assign "int" "X" (Left (Const 1)), 
