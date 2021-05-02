@@ -88,6 +88,7 @@ data BExpr = TT | FF -- the true and false constants
 ------------------------------------------------------------------------------------
 cDriver :: Decs -> String
 cDriver (DDec (x, y, z)) = "int main() {" ++ statementLister y ++ functionLister z ++ "}"
+cDriver (CDec (x, y, z)) = "struct " ++ x ++ " {" ++ statementLister y ++ "} " ++ funcyListBuilder x z 
 
 statementLister :: [Statements] -> String
 statementLister [Assign x y (Left z)] = dataConv x ++ " " ++ strCheck x y ++ " " ++ "=" ++ " " ++ aExToC z ++ "; "
@@ -157,10 +158,6 @@ paramLister ((varType, varName):xs) | xs /= []  = dataConv varType ++ " " ++ var
 functionLister :: [Funcs] -> String
 functionLister ((return, name, params, states):xs) = dataConv return ++ " " ++ name ++ "(" ++ paramLister params ++ ")" ++ "{" ++ statementLister states ++ "}"
 ----------------------------------------------------------------------------------------
--- Build a simulated class using structures
-classSim :: Decs -> String
-classSim (CDec (x, y, z)) = "struct " ++ x ++ " {" ++ statementLister y ++ "} " ++ funcyListBuilder x z 
-
 -- Pass name and list of functions to be built
 funcyListBuilder :: CName -> [Funcs] -> String
 funcyListBuilder x [y] = funcyBuilder x y
