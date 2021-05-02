@@ -140,7 +140,6 @@ aExToC (Sub x y) = putParen x ++ " - " ++ putParen y
 aExToC (Div x y) = putParen x ++ " / " ++ putParen y
 aExToC (FCall x y) = callBuilder x y
 
-
 -- Build a function call with list of AExpr as arguments
 callBuilder :: Funcs -> [AExpr] -> String 
 callBuilder (_,y,_,_) [a] = y ++ "(" ++ aExToC a ++ ")"
@@ -152,17 +151,29 @@ argsLister [x] = x
 argsLister (x:xs) = x ++ ", " ++ argsLister xs
 ---------------------------------------------------------------------------------------
 paramLister :: [Params] -> String
-paramLister ((varType, varName):xs) | xs /= []  = varType ++ " " ++ varName ++ "," ++ paramLister xs
-                                    | otherwise = varType ++ " " ++ varName
+paramLister ((varType, varName):xs) | xs /= []  = dataConv varType ++ " " ++ varName ++ "," ++ paramLister xs
+                                    | otherwise = dataConv varType ++ " " ++ varName
 
 functionLister :: [Funcs] -> String
-functionLister ((return, name, params, states):xs) = return ++ " " ++ name ++ "(" ++ paramLister params ++ ")" ++ "{" ++ statementLister states ++ "}"
+functionLister ((return, name, params, states):xs) = dataConv return ++ " " ++ name ++ "(" ++ paramLister params ++ ")" ++ "{" ++ statementLister states ++ "}"
+----------------------------------------------------------------------------------------
+-- Build a simulated class using structures
+classSim :: Decs -> String
+classSim (CDec (x, y, z)) = "struct " ++ x ++ " {" ++ statementLister y ++ "} " ++ funcyListBuilder x z 
 
+-- Pass name and list of functions to be built
+funcyListBuilder :: CName -> [Funcs] -> String
+funcyListBuilder x [y] = funcyBuilder x y
+funcyListBuilder x (y:ys) = funcyBuilder x y ++ funcyListBuilder x ys
 
+-- Build functions and constructor for simulated class
+{- When saving statements in constructor we need to save the variable names with obj.name like newStudent.name -}
+funcyBuilder :: CName -> Funcs -> String
+funcyBuilder n (w,x,y,z) | n == w && n == x = "struct " ++ n ++ " " ++ n ++ "_" ++ n ++ "(" ++ paramLister y ++ ")" ++ "{" ++
+                                    "struct " ++ n ++ " new" ++ n ++ "; " ++ statementLister z ++ " return " ++ " new" ++ n ++ ";"
+                         | otherwise = dataConv w ++ " " ++ n ++ "_" ++ x ++ "(" ++ paramLister y ++ ")" ++ "{" ++ statementLister z ++ "}"
 
---type Params = (PType, PVar)
---type Funcs = (RetType, FName, [Params], [Statements])
--------------------------------TEST----SLUT--------------------------------------------------
+-------------------------------TEST-----------------------------------------------------
 states = [Assign "int" "X" (Left (Const 1)), 
            ReAssign "X" (Left (Add (Const 60) (Sub (Const 10) (Var "X"))))]
 functs :: [Funcs]
@@ -172,4 +183,4 @@ functs = [("int", "addOne", [("int","x")],
 test1 = DDec ("Student", states, functs)
 
 concreteTest = cDriver test1
-
+-------------------------------TEST-----------------------------------------------------
