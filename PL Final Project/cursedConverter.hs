@@ -52,17 +52,9 @@ data Ops = AddOp | SubOp | MulOp | DivOp | EqlOp | AssignOp | DotOp | LesserOp
 
 data Types = Str | Int | Dble | Lng | Chr | Shrt | Bllean | Bte | Flt
 
-data Token = Class | MainM | VSym String | Csym Integer  LPar | RPar | LBra |
-             RBra | Semi | Com | Coln | Qut | Brac | PP | Clss | Min | Nw | St |
-             Arg | Vod | Ths | Rtrn | Systm | Out | Prnt | Type Types | Op Ops | Err |
-             PA AExpr 
-
-
-classifyT :: [Token] -> [Token]
-classifyT [] = []
-classifyT (PP:Clss:xs)                                = Class : classifyT xs
-classifyT (PP:St:Vod:Min:LPar:(Type Str):Brac:Arg:xs) = MainM : classifyT xs
-classifyT (x:xs)                                      = x : classifyT xs
+data Token = Class | MainM | VSym String | Csym Integer | LPar | RPar | LBra |
+             RBra | Semi | Com | Coln | Qut | Brac | Keyword String | Type Types |
+             Op Ops | Err | PA AExpr
 
 classify :: String -> Token
 classify "(" = LPar
@@ -75,19 +67,21 @@ classify ":" = Coln
 classify "\"" = Qut
 classify "[]" = Brac
 ------------ Class stuff ------------
-classify "public"  = PP--PP -> PublicPrivate
-classify "private" = PP
-classify "class"   = Clss -- C = class
-classify "main"    = Min -- M = main
-classify "new"     = Nw -- N = new
-classify "static"  = St -- St = static
-classify "args"    = Arg -- Arg = args 
-classify "void"    = Vod -- Vod = void
-classify "this"   = Ths -- Ths = this
-classify "return" = Rtrn
-classify "system" = Systm
-classify "out" = Out
-classify "print" = Prnt
+--also fuck having 40 types----------
+--class stuff will be known as keywords(look at classifyT for ex)--
+classify s@("public")  = Keyword s
+classify s@("private") = Keyword "public"--for simplicity
+classify s@("class")   = Keyword s
+classify s@("main")    = Keyword s
+classify s@("new")     = Keyword s
+classify s@("static")  = Keyword s
+classify s@("args")    = Keyword s
+classify s@("void")    = Keyword s
+classify s@("this")    = Keyword s
+classify s@("return")  = Keyword s
+classify s@("system")  = Keyword s
+classify s@("out")     = Keyword s
+classify s@("print")   = Keyword s
 ---------- Data Types ------------
 classify "String"  = Type Str
 classify "int"     = Type Int
@@ -98,7 +92,7 @@ classify "char"    = Type Chr
 classify "boolean" = Type Bllean
 classify "byte"    = Type Bte
 classify "float"   = Type Flt
----------- Operators ------------
+---------- Operators -------------
 classify "-"         = Op SubOp
 classify "+"         = Op AddOp
 classify "*"         = Op MulOp
@@ -108,8 +102,14 @@ classify "="         = Op AssignOp
 classify "."         = Op DotOp
 classify "<"         = Op LesserOp
 classify s | isCSym s = CSym (read s)
-classify (x:xs) | isLower x = VSym (x:xs)
-                | otherwise = Err
+classify (x:xs) = VSym (x:xs)
+
+classifyT :: [Token] -> [Token]
+classifyT [] = []
+classifyT (Keyword "public":Keyword "class":xs) = Class : classifyT xs
+classifyT (Keyword "public":Keyword "static":Keyword "void":Keyword "main"
+           :LPar:(Type Str):Brac:Keyword "args":xs) = MainM : classifyT xs
+classifyT (x:xs)                                      = x : classifyT xs
 
 isCSym :: String -> Bool
 isCSym "" = False
@@ -175,25 +175,10 @@ sr (PA e2 : BOp AddOp : PA e1 : stack) input        = sr (PA (Add e1 e2) : stack
 sr (PA e2 : BOp SubOp : PA e1 : stack) input        = sr (PA (Sub e1 e2) : stack) input
 sr (PA e2 : BOp MulOp : PA e1 : stack) input        = sr (PA (Mul e1 e2) : stack) input
 sr (PA e2 : BOp DivOp : PA e1 : stack) input        = sr (PA (Div e1 e2) : stack) input
+sr (MainM:stack) input = sr ( : stack) input
+sr (Class:(VSym Str):stack) input = sr ( : stack) input
 
---sr (BSym True : stack) input                        = sr (PB TT : stack) input
---sr (BSym False : stack) input                       = sr (PB FF : stack) input
---sr (PB b : UOp u : stack) input                     = sr (PB (Not b) : stack) input
 
---sr (PB e2 : BOp AndOp : PB e1 : stack) input        = sr (PB (And e1 e2) : stack) input
---sr (PB e2 : BOp OrOp : PB e1 : stack) input         = sr (PB (Or e1 e2) : stack) input
---sr (PA e2 : BOp EqlOp : PA e1 : stack) input        = sr (PB (Eql e1 e2) : stack) input
---sr (PA e2 : BOp LtOp : PA e1 : stack) input         = sr (PB (Lt e1 e2) : stack) input
-sr (PA a : BOp AssignOp : PA (Var c) : stack) input = sr (PI (Assign c a) : stack) input
-sr (RPar : PA e : LPar : stack) input               = sr (PA e : stack) input
---sr (RPar : PB e : LPar : stack) input               = sr (PB e : stack) input
-sr (RBra : PI i : stack) input                      = sr (PI (Do [i]) : stack) input
-sr (RBra : stack) input                             = sr (PI (Do []) : stack) input
-sr (PI (Do i) : Semi : PI x : stack) input          = sr (PI (Do (x:i)) : stack) input
-sr (PI (Do i) : LBra : stack) input                 = sr (PI (Do i) : stack) input
---sr (PI e : PB b : Keyword "while" : stack) input    = sr (PI (While b e): stack) input
---sr (PI i2 : Keyword "else" : PI i1 : Keyword "then" : PB b : Keyword "if" : stack) input 
-                                                    = sr (PI (IfThenElse b i1 i2) : stack) input
 sr (Keyword "nop" : stack) input                    = sr (PI Nop : stack) input
 sr stack (i:input)                                  = sr (i:stack) input
 sr stack []                                         = stack
